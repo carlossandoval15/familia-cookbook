@@ -644,7 +644,7 @@
     <h3 class="display">New Cookbook</h3>
     <div class="form-group">
       <label>Name</label>
-      <input type="text" class="modal-input" id="cb-name-input" placeholder="e.g. Abuela Rosa, Mamá, Tía Carmen">
+      <input type="text" class="modal-input" id="cb-name-input" placeholder="e.g. Abuelitas, Mamá, Tía Carmen">
     </div>
     <div class="form-group">
       <label>Avatar</label>
@@ -1084,7 +1084,7 @@ function showAddManual() {
   const form = document.getElementById('add-form');
   form.innerHTML = `
     <div class="form-group"><label>Recipe Name *</label><input type="text" id="m-title" placeholder="e.g. Arroz Rojo"></div>
-    <div class="form-group"><label>Origin</label><input type="text" id="m-origin" placeholder="e.g. Abuela's kitchen, Guadalajara"></div>
+    <div class="form-group"><label>Origin</label><input type="text" id="m-origin" placeholder="e.g. Abuelita's kitchen, Guadalajara"></div>
     <div class="form-group"><label>Personal Story / Memory</label><textarea id="m-story" placeholder="The memory or note that goes with this recipe…"></textarea></div>
     <div class="form-group">
       <label>Serves</label>
@@ -1304,10 +1304,10 @@ async function seedIfEmpty() {
   if (all.length > 0) return;
 
   const abuela = {
-    id: uid(), name: 'Abuela Rosa', emoji: '👵🏽', createdAt: Date.now(),
+    id: uid(), name: 'Abuelitas', emoji: '👵🏽', createdAt: Date.now(),
     recipes: [
       {
-        id: uid(), title: 'Arroz Rojo', origin: "Abuela's kitchen, Guadalajara",
+        id: uid(), title: 'Arroz Rojo', origin: "Abuelita's kitchen, Guadalajara",
         story: "She made this every Sunday. Never measured anything — I watched her hands for years until I finally wrote it down. The secret is letting the rice toast until it smells like popcorn.",
         servings: 6, prepMinutes: 10, cookMinutes: 25, totalMinutes: 35,
         difficulty: 'Easy', tags: ['Mexican','Rice','Sunday','Side Dish'],
@@ -1337,7 +1337,7 @@ async function seedIfEmpty() {
         sourcePhoto: null, createdAt: Date.now()
       },
       {
-        id: uid(), title: 'Salsa Roja', origin: "Abuela's kitchen",
+        id: uid(), title: 'Salsa Roja', origin: "Abuelita's kitchen",
         story: 'Always on the table. Made fresh every day.',
         servings: 8, prepMinutes: 5, cookMinutes: 15, totalMinutes: 20,
         difficulty: 'Easy', tags: ['Mexican','Salsa','Everyday'],
@@ -1358,7 +1358,7 @@ async function seedIfEmpty() {
         sourcePhoto: null, createdAt: Date.now()
       },
       {
-        id: uid(), title: 'Frijoles de Olla', origin: "Abuela's kitchen",
+        id: uid(), title: 'Frijoles de Olla', origin: "Abuelita's kitchen",
         story: 'Pinto beans from scratch. She kept a pot going on the stove almost every week.',
         servings: 8, prepMinutes: 5, cookMinutes: 120, totalMinutes: 125,
         difficulty: 'Easy', tags: ['Mexican','Beans','Staple','Vegan'],
