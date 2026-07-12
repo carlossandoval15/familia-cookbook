@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Familia">
+<meta name="theme-color" content="#1C48A4">
+<title>Familia — Family Cookbook</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+  /* ── Reset ─────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* ── Palette ───────────────────────────────────── */
+  :root {
+    --cobalt:       #1C48A4;
+    --cobalt-light: #3366CC;
+    --cobalt-bg:    #EEF2FB;
+    --marigold:     #FAB30F;
+    --marigold-deep:#E68F05;
+    --masa:         #FAF7E7;
+    --ink:          #1E1A14;
+    --ink-muted:    #7F7B74;
+    --card:         #FFFFFF;
+    --border:       #E8E4D8;
+    --danger:       #C0392B;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --masa:    #18181F;
+      --ink:     #F0EDE3;
+      --ink-muted: #8A877F;
+      --card:    #242430;
+      --border:  #38383F;
+      --cobalt-bg: #1A2340;
+    }
+  }
+
+  body {
+    background: var(--masa);
+    color: var(--ink);
+    min-height: 100dvh;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Typography ────────────────────────────────── */
+  .display   { font-family: Georgia, serif; font-weight: bold; }
+  .serif     { font-family: Georgia, serif; }
+  .sans      { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .muted     { color: var(--ink-muted); }
+
+  /* ── Layout ────────────────────────────────────── */
+  .screen { display: none; flex-direction: column; min-height: 100dvh; }
+  .screen.active { display: flex; }
+
+  .scroll-content { flex: 1; overflow-y: auto; padding-bottom: 24px; }
+
+  /* ── Cards ─────────────────────────────────────── */
+  .card {
+    background: var(--card);
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  }
+
+  /* ── Buttons ───────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; border: none; cursor: pointer; font-family: inherit;
+    border-radius: 14px; font-weight: 600; transition: opacity .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { opacity: .75; }
+  .btn-primary {
+    background: var(--cobalt); color: #fff;
+    padding: 15px 24px; font-size: 16px; width: 100%;
+  }
+  .btn-secondary {
+    background: var(--cobalt-bg); color: var(--cobalt);
+    padding: 15px 24px; font-size: 16px; width: 100%;
+  }
+  .btn-icon {
+    background: var(--cobalt-bg); color: var(--cobalt);
+    width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+    font-size: 20px;
+  }
+  .btn-danger { background: var(--danger); color: #fff; padding: 12px 20px; font-size: 15px; }
+
+  /* ── Divider ───────────────────────────────────── */
+  .divider {
+    display: flex; align-items: center; gap: 10px;
+    padding: 0 16px; margin: 12px 0;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--cobalt); opacity: .2;
+  }
+  .divider span { color: var(--marigold); font-size: 12px; }
+
+  /* ── Tag pill ──────────────────────────────────── */
+  .tag {
+    display: inline-block; background: var(--cobalt-bg); color: var(--cobalt);
+    font-size: 11px; font-weight: 600; padding: 3px 10px;
+    border-radius: 100px; font-family: -apple-system, sans-serif;
+  }
+
+  /* ── Nav header ─────────────────────────────────── */
+  .nav-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 16px 8px;
+    position: sticky; top: 0; z-index: 10;
+    background: var(--masa);
+  }
+  .nav-back {
+    background: none; border: none; color: var(--cobalt);
+    font-size: 16px; cursor: pointer; padding: 8px; margin: -8px;
+    font-family: -apple-system, sans-serif; font-weight: 500;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  /* ═══════════════════════════════════════════════ */
+  /* SHELF SCREEN                                    */
+  /* ═══════════════════════════════════════════════ */
+  #shelf-hero {
+    text-align: center; padding: 24px 16px 8px;
+  }
+  #shelf-hero .emoji { font-size: 52px; display: block; margin-bottom: 6px; }
+  #shelf-hero h1 { font-size: 32px; }
+  #shelf-hero p  { font-size: 14px; margin-top: 4px; }
+
+  #cookbook-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 14px; padding: 0 16px;
+  }
+
+  .cookbook-card {
+    background: var(--card); border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
+    padding: 14px; cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .1s;
+  }
+  .cookbook-card:active { transform: scale(.97); }
+
+  .cookbook-card .avatar {
+    background: var(--cobalt-bg); border-radius: 12px;
+    height: 80px; display: flex; align-items: center; justify-content: center;
+    font-size: 44px; margin-bottom: 10px;
+  }
+  .cookbook-card h3 { font-size: 16px; line-height: 1.2; }
+  .cookbook-card .count { font-size: 12px; color: var(--ink-muted); margin-top: 3px;
+    font-family: -apple-system, sans-serif; }
+
+  .cookbook-add-card {
+    border: 1.5px dashed rgba(28,72,164,.3); border-radius: 14px;
+    height: 160px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 8px;
+    cursor: pointer; color: var(--ink-muted); font-size: 14px;
+    font-family: -apple-system, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity .15s;
+  }
+  .cookbook-add-card:active { opacity: .6; }
+  .cookbook-add-card span { font-size: 32px; opacity: .4; }
+
+  /* ═══════════════════════════════════════════════ */
+  /* COOKBOOK DETAIL                                 */
+  /* ═══════════════════════════════════════════════ */
+  #cb-header { text-align: center; padding: 8px 16px 12px; }
+  #cb-header .emoji { font-size: 52px; display: block; margin-bottom: 4px; }
+  #cb-header h2 { font-size: 26px; }
+
+  #recipe-list { padding: 0 16px; display: flex; flex-direction: column; gap: 12px; }
+
+  .recipe-row {
+    padding: 14px; display: flex; align-items: center; gap: 12px;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
+    transition: transform .1s;
+  }
+  .recipe-row:active { transform: scale(.98); }
+  .recipe-row .info { flex: 1; min-width: 0; }
+  .recipe-row h4 { font-size: 17px; line-height: 1.2; }
+  .recipe-row .meta { font-size: 11px; color: var(--ink-muted); margin-top: 4px;
+    font-family: -apple-system, sans-serif; display: flex; gap: 10px; flex-wrap: wrap; }
+  .recipe-row .chevron { color: var(--ink-muted); font-size: 14px; flex-shrink: 0; }
+
+  .cb-fab {
+    display: flex; gap: 12px; padding: 12px 16px 28px;
+    position: sticky; bottom: 0;
+    background: linear-gradient(to bottom, transparent, var(--masa) 40%);
+  }
+
+  /* ═══════════════════════════════════════════════ */
+  /* RECIPE DETAIL                                   */
+  /* ═══════════════════════════════════════════════ */
+  #rd-hero { text-align: center; padding: 12px 20px 0; }
+  #rd-hero h2 { font-size: 28px; line-height: 1.2; }
+  #rd-hero .origin { font-size: 14px; font-style: italic; margin-top: 4px; }
+  #rd-tags { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+    padding: 10px 20px; }
+
+  .rd-section { padding: 0 20px; margin-bottom: 8px; }
+  .rd-section h3 { font-size: 20px; margin-bottom: 12px; }
+
+  .story-box {
+    background: var(--cobalt-bg); border-radius: 12px;
+    padding: 14px 16px; margin: 0 16px 8px;
+  }
+  .story-label { font-size: 12px; font-weight: 600; color: var(--marigold-deep);
+    font-family: -apple-system, sans-serif; margin-bottom: 6px;
+    display: flex; align-items: center; gap: 4px; }
+  .story-text  { font-size: 15px; font-style: italic; line-height: 1.6; }
+
+  .meta-row {
+    display: flex; padding: 0 20px; gap: 0;
+  }
+  .meta-chip {
+    flex: 1; text-align: center; display: flex; flex-direction: column;
+    align-items: center; gap: 4px; padding: 4px 0;
+  }
+  .meta-chip .icon { font-size: 16px; }
+  .meta-chip .val  { font-size: 14px; font-weight: bold; }
+  .meta-chip .lbl  { font-size: 10px; color: var(--ink-muted);
+    font-family: -apple-system, sans-serif; }
+  .meta-chip + .meta-chip { border-left: 1px solid var(--border); }
+
+  .ingredient-row {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 8px 0; border-bottom: 1px solid var(--border); cursor: pointer;
+  }
+  .ingredient-row:last-child { border-bottom: none; }
+  .ingredient-row .check-icon { font-size: 18px; flex-shrink: 0; margin-top: 2px; transition: color .2s; }
+  .ingredient-row.checked .check-icon { color: var(--cobalt); }
+  .ingredient-row .qty  { font-size: 13px; font-weight: 600; color: var(--cobalt);
+    font-family: -apple-system, sans-serif; min-width: 54px; flex-shrink: 0; }
+  .ingredient-row .name { font-size: 15px; flex: 1; }
+  .ingredient-row .notes{ font-size: 12px; color: var(--ink-muted); font-style: italic; }
+  .ingredient-row.checked .name { text-decoration: line-through; color: var(--ink-muted); }
+
+  .step-row {
+    display: flex; align-items: flex-start; gap: 14px;
+    margin-bottom: 16px; cursor: pointer;
+  }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+    background: var(--cobalt-bg); color: var(--cobalt);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; font-family: -apple-system, sans-serif;
+    margin-top: 2px; transition: background .2s, color .2s;
+  }
+  .step-row.checked .step-num { background: var(--cobalt); color: #fff; }
+  .step-row .step-text { font-size: 15px; line-height: 1.65; flex: 1; }
+  .step-row.checked .step-text { text-decoration: line-through; color: var(--ink-muted); }
+
+  .source-photo-btn {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px; margin: 0 16px;
+    color: var(--cobalt); cursor: pointer;
+    font-family: -apple-system, sans-serif; font-size: 14px; font-weight: 500;
+  }
+  .source-photo-btn .chevron { margin-left: auto; color: var(--ink-muted); }
+
+  /* ═══════════════════════════════════════════════ */
+  /* CAPTURE SCREEN                                  */
+  /* ═══════════════════════════════════════════════ */
+  #capture-content {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px 24px 32px; gap: 24px; text-align: center;
+  }
+  #capture-preview {
+    width: 100%; max-height: 240px; object-fit: contain;
+    border-radius: 12px; display: none;
+  }
+  #capture-placeholder { font-size: 64px; }
+  #capture-title { font-size: 22px; }
+  #capture-sub   { font-size: 14px; color: var(--ink-muted); line-height: 1.5; }
+
+  .capture-btns { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+
+  #key-warning {
+    background: #FFF3CD; border: 1px solid #FFE082; border-radius: 10px;
+    padding: 10px 14px; font-size: 13px; color: #856404; display: none;
+    font-family: -apple-system, sans-serif; text-align: left; width: 100%;
+  }
+
+  /* ── Analyzing overlay ─── */
+  #analyzing-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; z-index: 100; color: #fff;
+  }
+  #analyzing-overlay.show { display: flex; }
+  .spinner {
+    width: 48px; height: 48px; border: 4px solid rgba(255,255,255,.3);
+    border-top-color: #fff; border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Review screen ─── */
+  #review-form { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: var(--ink-muted);
+    font-family: -apple-system, sans-serif; display: block; margin-bottom: 5px; }
+  .form-group input, .form-group textarea {
+    width: 100%; background: var(--card); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 12px; font-size: 15px; font-family: Georgia, serif;
+    outline: none;
+  }
+  .form-group textarea { min-height: 80px; resize: vertical; }
+
+  .ingredients-preview { display: flex; flex-direction: column; gap: 4px; }
+  .ingredients-preview li { font-size: 14px; padding: 3px 0;
+    border-bottom: 1px solid var(--border); }
+  .ingredients-preview li:last-child { border-bottom: none; }
+  .ing-qty { font-weight: 600; color: var(--cobalt); font-family: -apple-system, sans-serif;
+    font-size: 13px; }
+
+  /* ═══════════════════════════════════════════════ */
+  /* MANUAL ADD                                      */
+  /* ═══════════════════════════════════════════════ */
+  #add-form { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .dyn-list { display: flex; flex-direction: column; gap: 8px; }
+  .dyn-row  { display: flex; gap: 8px; align-items: flex-start; }
+  .dyn-row input, .dyn-row textarea {
+    flex: 1; background: var(--card); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 14px; font-family: Georgia, serif; outline: none;
+  }
+  .dyn-row .qty-input { width: 70px; flex: none; }
+  .btn-remove {
+    background: none; border: none; color: var(--danger);
+    font-size: 20px; cursor: pointer; padding: 4px; flex-shrink: 0;
+    line-height: 1;
+  }
+  .btn-add-row {
+    background: none; border: none; color: var(--cobalt);
+    font-size: 14px; cursor: pointer; text-align: left; padding: 4px 0;
+    font-family: -apple-system, sans-serif; font-weight: 500;
+  }
+
+  /* ═══════════════════════════════════════════════ */
+  /* SETTINGS                                        */
+  /* ═══════════════════════════════════════════════ */
+  .settings-section { padding: 0 16px; margin-bottom: 24px; }
+  .settings-section h3 { font-size: 13px; font-weight: 600; color: var(--ink-muted);
+    font-family: -apple-system, sans-serif; text-transform: uppercase;
+    letter-spacing: .5px; margin-bottom: 8px; }
+  .settings-row {
+    background: var(--card); border-radius: 12px; overflow: hidden;
+  }
+  .settings-item {
+    padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .settings-item:last-child { border-bottom: none; }
+  .settings-item label { font-size: 14px; font-weight: 500;
+    font-family: -apple-system, sans-serif; }
+  .settings-item small { font-size: 12px; color: var(--ink-muted);
+    font-family: -apple-system, sans-serif; }
+  .settings-item input {
+    background: var(--masa); color: var(--ink); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 14px; width: 100%;
+    font-family: -apple-system, monospace; outline: none; margin-top: 4px;
+  }
+  .save-badge {
+    display: inline-block; background: #28a745; color: #fff;
+    font-size: 12px; padding: 4px 10px; border-radius: 20px; margin-top: 4px; display: none;
+  }
+  .save-badge.show { display: inline-block; }
+
+  /* ═══════════════════════════════════════════════ */
+  /* MODALS                                          */
+  /* ═══════════════════════════════════════════════ */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    display: none; align-items: flex-end; justify-content: center; z-index: 200;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--masa); border-radius: 24px 24px 0 0;
+    width: 100%; max-height: 85dvh; overflow-y: auto;
+    padding: 20px 20px 40px;
+    animation: slideUp .2s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(40px); opacity:0; } to { transform: none; opacity:1; } }
+  .modal h3 { font-size: 20px; margin-bottom: 16px; }
+  .modal-input {
+    width: 100%; background: var(--card); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px; font-size: 16px; font-family: Georgia, serif;
+    outline: none; margin-bottom: 12px;
+  }
+  .emoji-grid {
+    display: grid; grid-template-columns: repeat(5,1fr); gap: 8px; margin-bottom: 16px;
+  }
+  .emoji-btn {
+    background: var(--card); border: 2px solid transparent; border-radius: 10px;
+    font-size: 28px; padding: 8px; cursor: pointer; text-align: center;
+    transition: border-color .15s;
+  }
+  .emoji-btn.selected { border-color: var(--cobalt); background: var(--cobalt-bg); }
+
+  /* Photo lightbox */
+  #photo-lightbox {
+    position: fixed; inset: 0; background: #000;
+    display: none; align-items: center; justify-content: center;
+    z-index: 300; flex-direction: column; gap: 16px;
+  }
+  #photo-lightbox.show { display: flex; }
+  #lightbox-img { max-width: 100%; max-height: 85dvh; object-fit: contain; }
+  #lightbox-close {
+    position: absolute; top: 16px; right: 20px;
+    color: #fff; font-size: 24px; cursor: pointer;
+    background: none; border: none; font-family: -apple-system, sans-serif;
+  }
+
+  /* ── Empty states ───────────────────────────────── */
+  .empty-state {
+    text-align: center; padding: 60px 32px;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+  }
+  .empty-state .icon { font-size: 52px; }
+  .empty-state h3 { font-size: 20px; }
+  .empty-state p  { font-size: 14px; color: var(--ink-muted); line-height: 1.5; }
+
+  /* ── Install banner ─────────────────────────────── */
+  #install-banner {
+    background: var(--cobalt); color: #fff; padding: 12px 16px;
+    font-family: -apple-system, sans-serif; font-size: 13px; line-height: 1.4;
+    display: none; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  #install-banner.show { display: flex; }
+  #install-banner button {
+    background: rgba(255,255,255,.2); border: none; color: #fff;
+    padding: 6px 12px; border-radius: 8px; cursor: pointer; flex-shrink: 0;
+    font-family: -apple-system, sans-serif; font-size: 13px; font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- INSTALL BANNER (iOS Safari)                         -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="install-banner">
+  <span>📱 Tap <strong>Share</strong> → <strong>Add to Home Screen</strong> to install the app</span>
+  <button onclick="document.getElementById('install-banner').classList.remove('show')">✕</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCREEN: SHELF                                        -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="screen-shelf" class="screen active">
+  <div class="scroll-content">
+    <div id="shelf-hero">
+      <span class="emoji">📖</span>
+      <h1 class="display">Familia</h1>
+      <p class="muted serif">Our Family Cookbooks</p>
+    </div>
+    <div class="divider"><span>✦</span></div>
+    <div id="cookbook-grid"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCREEN: COOKBOOK DETAIL                             -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="screen-cookbook" class="screen">
+  <div class="nav-header">
+    <button class="nav-back" onclick="showShelf()">‹ Back</button>
+    <button class="btn btn-icon" onclick="deleteCookbookPrompt()" style="background:none;color:var(--ink-muted);font-size:18px;" title="Delete cookbook">🗑</button>
+  </div>
+  <div class="scroll-content">
+    <div id="cb-header">
+      <span class="emoji" id="cb-emoji"></span>
+      <h2 class="display" id="cb-name"></h2>
+      <p class="muted sans" id="cb-count"></p>
+    </div>
+    <div class="divider"><span>✦</span></div>
+    <div id="recipe-list"></div>
+  </div>
+  <div class="cb-fab">
+    <button class="btn btn-primary" onclick="showCapture()" style="flex:1">
+      📷 Scan Recipe Card
+    </button>
+    <button class="btn btn-icon" onclick="showAddManual()" title="Type a recipe">✏️</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCREEN: RECIPE DETAIL                               -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="screen-recipe" class="screen">
+  <div class="nav-header">
+    <button class="nav-back" onclick="showCookbook(state.currentCookbookId)">‹ Back</button>
+    <button class="btn btn-icon" onclick="deleteRecipePrompt()" style="background:none;color:var(--ink-muted);font-size:18px;" title="Delete">🗑</button>
+  </div>
+  <div class="scroll-content" id="recipe-detail-content"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCREEN: CAPTURE                                     -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="screen-capture" class="screen">
+  <div class="nav-header">
+    <button class="nav-back" onclick="showCookbook(state.currentCookbookId)">‹ Cancel</button>
+    <span class="display" style="font-size:18px">Scan Card</span>
+    <span style="width:60px"></span>
+  </div>
+  <div id="capture-content">
+    <span id="capture-placeholder">📸</span>
+    <img id="capture-preview" alt="Selected recipe card">
+    <div>
+      <h2 class="display" id="capture-title">Photograph the recipe card</h2>
+      <p id="capture-sub" class="muted sans" style="margin-top:6px;font-size:14px">
+        Claude reads the handwriting and builds a clean recipe page automatically.
+      </p>
+    </div>
+    <div id="key-warning">
+      ⚠️ No Anthropic API key set. Go to <strong>Settings</strong> and paste your key to enable scanning.
+    </div>
+    <div class="capture-btns">
+      <label class="btn btn-primary" style="cursor:pointer">
+        📷 Take Photo / Choose from Library
+        <input type="file" accept="image/*" capture="environment" id="photo-input" style="display:none" onchange="handlePhotoSelect(this)">
+      </label>
+      <button class="btn btn-secondary" id="btn-transcribe" onclick="transcribePhoto()" style="display:none">
+        ✨ Read This Card
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCREEN: REVIEW (after transcription)                -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="screen-review" class="screen">
+  <div class="nav-header">
+    <button class="nav-back" onclick="showScreen('screen-capture')">‹ Retake</button>
+    <span class="display" style="font-size:18px">Review</span>
+    <span style="width:60px"></span>
+  </div>
+  <div class="scroll-content">
+    <div id="review-form"></div>
+  </div>
+  <div style="padding:12px 16px 32px">
+    <button class="btn btn-primary" onclick="saveFromReview()">✅ Save to Cookbook</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCREEN: MANUAL ADD                                  -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="screen-add" class="screen">
+  <div class="nav-header">
+    <button class="nav-back" onclick="showCookbook(state.currentCookbookId)">‹ Cancel</button>
+    <span class="display" style="font-size:18px">New Recipe</span>
+    <span style="width:60px"></span>
+  </div>
+  <div class="scroll-content">
+    <div id="add-form"></div>
+  </div>
+  <div style="padding:12px 16px 32px">
+    <button class="btn btn-primary" onclick="saveManualRecipe()">Save Recipe</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- SCREEN: SETTINGS                                    -->
+<!-- ═══════════════════════════════════════════════════ -->
+<div id="screen-settings" class="screen">
+  <div class="nav-header">
+    <button class="nav-back" onclick="showShelf()">‹ Back</button>
+    <span class="display" style="font-size:18px">Settings</span>
+    <span style="width:60px"></span>
+  </div>
+  <div class="scroll-content" style="padding-top:12px">
+    <div class="settings-section">
+      <h3>Anthropic API Key</h3>
+      <div class="settings-row">
+        <div class="settings-item">
+          <label>API Key</label>
+          <small>Required for scanning handwritten recipe cards. ~$0.03–0.08 per scan.</small>
+          <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off" autocorrect="off">
+          <div>
+            <button class="btn btn-primary" onclick="saveApiKey()" style="width:auto;padding:10px 20px;margin-top:8px;font-size:14px">Save Key</button>
+            <span class="save-badge" id="save-badge">Saved ✓</span>
+          </div>
+          <small><a href="https://console.anthropic.com" target="_blank" style="color:var(--cobalt)">Get a key at console.anthropic.com →</a></small>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>Install App</h3>
+      <div class="settings-row">
+        <div class="settings-item">
+          <label>📱 iPhone / iPad</label>
+          <small>Tap <strong>Share</strong> in Safari → <strong>Add to Home Screen</strong>. The app installs like a native app — completely free.</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <h3>About</h3>
+      <div class="settings-row">
+        <div class="settings-item">
+          <label>Family Cookbook</label>
+          <small>Preserve your family's recipes before they're forgotten.</small>
+        </div>
+        <div class="settings-item">
+          <label>Version</label><small>1.0</small>
+        </div>
+        <div class="settings-item">
+          <label>Powered by</label>
+          <small>Claude AI for handwriting transcription · Stores data only on your device</small>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section" style="margin-top:8px">
+      <div class="settings-row">
+        <div class="settings-item">
+          <button class="btn btn-danger" onclick="clearAllData()">🗑 Delete All Data</button>
+          <small style="margin-top:6px;display:block">Permanently removes all cookbooks and recipes.</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- MODALS                                             -->
+<!-- ═══════════════════════════════════════════════════ -->
+
+<!-- Add Cookbook -->
+<div id="modal-add-cookbook" class="modal-backdrop" onclick="closeModal('modal-add-cookbook')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3 class="display">New Cookbook</h3>
+    <div class="form-group">
+      <label>Name</label>
+      <input type="text" class="modal-input" id="cb-name-input" placeholder="e.g. Abuela Rosa, Mamá, Tía Carmen">
+    </div>
+    <div class="form-group">
+      <label>Avatar</label>
+      <div class="emoji-grid" id="emoji-grid"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveCookbook()">Add Cookbook</button>
+  </div>
+</div>
+
+<!-- Photo lightbox -->
+<div id="photo-lightbox">
+  <button id="lightbox-close" onclick="document.getElementById('photo-lightbox').classList.remove('show')">✕ Done</button>
+  <img id="lightbox-img" alt="Recipe card">
+</div>
+
+<!-- Analyzing overlay -->
+<div id="analyzing-overlay">
+  <div class="spinner"></div>
+  <p style="font-size:18px;font-family:Georgia,serif">Reading the handwriting…</p>
+  <p style="font-size:14px;opacity:.7;font-family:-apple-system,sans-serif">Claude is transcribing your recipe card</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<!-- APP JS                                              -->
+<!-- ═══════════════════════════════════════════════════ -->
+<script>
+// ── State ─────────────────────────────────────────────
+const state = {
+  currentCookbookId: null,
+  currentRecipeId:   null,
+  capturedImageData: null,   // base64 JPEG
+  pendingRecipe:     null,   // from transcription
+};
+
+// ── DB (IndexedDB) ────────────────────────────────────
+const DB_NAME = 'familia-cookbook-v1';
+let db;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('cookbooks')) {
+        d.createObjectStore('cookbooks', { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror   = e => reject(e);
+  });
+}
+
+function dbGet(store, key) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+function dbGetAll(store) {
+  return new Promise((res, rej) => {
+    const tx  = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+function dbPut(store, obj) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put(obj);
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+function dbDelete(store, key) {
+  return new Promise((res, rej) => {
+    const tx  = db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).delete(key);
+    req.onsuccess = () => res();
+    req.onerror   = () => rej(req.error);
+  });
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+}
+
+// ── Screen routing ────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── Shelf ─────────────────────────────────────────────
+async function showShelf() {
+  showScreen('screen-shelf');
+  const cookbooks = await dbGetAll('cookbooks');
+  cookbooks.sort((a, b) => a.createdAt - b.createdAt);
+  const grid = document.getElementById('cookbook-grid');
+
+  if (cookbooks.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="icon">🫙</div>
+        <h3>Start Your Family's Cookbook</h3>
+        <p>Preserve recipes before they're forgotten. Add your first cookbook below.</p>
+      </div>`;
+  } else {
+    grid.innerHTML = cookbooks.map(cb => `
+      <div class="cookbook-card" onclick="showCookbook('${cb.id}')">
+        <div class="avatar">${cb.emoji}</div>
+        <h3 class="display">${esc(cb.name)}</h3>
+        <div class="count sans">${cb.recipes.length} recipe${cb.recipes.length !== 1 ? 's' : ''}</div>
+      </div>
+    `).join('');
+  }
+
+  grid.innerHTML += `
+    <div class="cookbook-add-card" onclick="openAddCookbook()">
+      <span>＋</span>
+      <div>Add Cookbook</div>
+    </div>`;
+
+  // Settings icon in hero
+  document.querySelector('#shelf-hero p').innerHTML =
+    `Our Family Cookbooks &nbsp; <button onclick="showScreen('screen-settings')" style="background:none;border:none;cursor:pointer;color:var(--cobalt);font-size:18px;vertical-align:middle">⚙️</button>`;
+}
+
+// ── Cookbook detail ───────────────────────────────────
+async function showCookbook(id) {
+  state.currentCookbookId = id;
+  const cb = await dbGet('cookbooks', id);
+  if (!cb) return showShelf();
+
+  document.getElementById('cb-emoji').textContent = cb.emoji;
+  document.getElementById('cb-name').textContent  = cb.name;
+  document.getElementById('cb-count').textContent = `${cb.recipes.length} recipe${cb.recipes.length !== 1 ? 's' : ''}`;
+
+  const list = document.getElementById('recipe-list');
+  const sorted = [...cb.recipes].sort((a,b) => a.title.localeCompare(b.title));
+
+  if (sorted.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📝</div>
+        <h3>No recipes yet</h3>
+        <p>Photograph an old recipe card or type one in manually.</p>
+      </div>`;
+  } else {
+    list.innerHTML = sorted.map(r => `
+      <div class="recipe-row card" onclick="showRecipe('${r.id}')">
+        <div class="info">
+          <h4 class="display">${esc(r.title)}</h4>
+          ${r.origin ? `<div class="muted serif" style="font-size:12px;margin-top:2px;font-style:italic">${esc(r.origin)}</div>` : ''}
+          <div class="meta">
+            ${r.totalMinutes > 0 ? `<span>⏱ ${r.totalMinutes}m</span>` : ''}
+            <span>👤 ${r.servings}</span>
+            <span class="tag">${esc(r.difficulty)}</span>
+          </div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+    `).join('');
+  }
+
+  showScreen('screen-cookbook');
+}
+
+// ── Recipe detail ─────────────────────────────────────
+async function showRecipe(recipeId) {
+  const cb = await dbGet('cookbooks', state.currentCookbookId);
+  const r  = cb?.recipes.find(x => x.id === recipeId);
+  if (!r) return;
+  state.currentRecipeId = recipeId;
+
+  const el = document.getElementById('recipe-detail-content');
+
+  const tags = (r.tags || []).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  const ingredients = (r.ingredients || []).map((ing, i) => `
+    <div class="ingredient-row" id="ing-${i}" onclick="toggleCheck(this)">
+      <span class="check-icon">○</span>
+      <span class="qty">${esc(ing.quantity)}</span>
+      <div>
+        <div class="name">${esc(ing.name)}</div>
+        ${ing.notes ? `<div class="notes">${esc(ing.notes)}</div>` : ''}
+      </div>
+    </div>`).join('');
+
+  const steps = (r.steps || []).map((s, i) => `
+    <div class="step-row" id="step-${i}" onclick="toggleCheck(this)">
+      <div class="step-num">${i+1}</div>
+      <div class="step-text serif">${esc(s)}</div>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div id="rd-hero">
+      <h2 class="display">${esc(r.title)}</h2>
+      ${r.origin ? `<div class="origin muted">${esc(r.origin)}</div>` : ''}
+    </div>
+    ${tags ? `<div id="rd-tags">${tags}</div>` : ''}
+    ${r.story ? `
+      <div class="story-box">
+        <div class="story-label">♥ The Story</div>
+        <div class="story-text">${esc(r.story)}</div>
+      </div>` : ''}
+    <div class="divider"><span>✦</span></div>
+    <div class="meta-row">
+      ${r.prepMinutes > 0 ? `<div class="meta-chip"><span class="icon">⏱</span><span class="val">${r.prepMinutes}m</span><span class="lbl">Prep</span></div>` : ''}
+      ${r.cookMinutes > 0 ? `<div class="meta-chip"><span class="icon">🔥</span><span class="val">${r.cookMinutes}m</span><span class="lbl">Cook</span></div>` : ''}
+      <div class="meta-chip"><span class="icon">👤</span><span class="val">${r.servings}</span><span class="lbl">Serves</span></div>
+      <div class="meta-chip"><span class="icon">📊</span><span class="val">${esc(r.difficulty)}</span><span class="lbl">Level</span></div>
+    </div>
+    <div class="divider"><span>✦</span></div>
+    ${ingredients ? `
+      <div class="rd-section">
+        <h3 class="display">Ingredients</h3>
+        ${ingredients}
+      </div>
+      <div class="divider"><span>✦</span></div>` : ''}
+    ${steps ? `
+      <div class="rd-section">
+        <h3 class="display">Instructions</h3>
+        ${steps}
+      </div>` : ''}
+    ${r.sourcePhoto ? `
+      <div class="divider"><span>✦</span></div>
+      <div class="source-photo-btn card" onclick="showLightbox('${r.id}')">
+        📷 View Original Recipe Card <span class="chevron">›</span>
+      </div>` : ''}
+    <div style="height:32px"></div>
+  `;
+
+  showScreen('screen-recipe');
+}
+
+function toggleCheck(el) {
+  el.classList.toggle('checked');
+  const icon = el.querySelector('.check-icon');
+  if (icon) icon.textContent = el.classList.contains('checked') ? '●' : '○';
+}
+
+async function showLightbox(recipeId) {
+  const cb = await dbGet('cookbooks', state.currentCookbookId);
+  const r  = cb?.recipes.find(x => x.id === recipeId);
+  if (!r?.sourcePhoto) return;
+  document.getElementById('lightbox-img').src = r.sourcePhoto;
+  document.getElementById('photo-lightbox').classList.add('show');
+}
+
+// ── Capture screen ────────────────────────────────────
+function showCapture() {
+  // Reset
+  state.capturedImageData = null;
+  document.getElementById('capture-preview').style.display = 'none';
+  document.getElementById('capture-placeholder').style.display = 'block';
+  document.getElementById('btn-transcribe').style.display = 'none';
+  document.getElementById('photo-input').value = '';
+  document.getElementById('capture-title').textContent = 'Photograph the recipe card';
+
+  // Warn if no key
+  const hasKey = !!getApiKey();
+  document.getElementById('key-warning').style.display = hasKey ? 'none' : 'block';
+
+  showScreen('screen-capture');
+}
+
+function handlePhotoSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.capturedImageData = e.target.result; // data:image/jpeg;base64,...
+    const preview = document.getElementById('capture-preview');
+    preview.src   = e.target.result;
+    preview.style.display = 'block';
+    document.getElementById('capture-placeholder').style.display = 'none';
+    document.getElementById('btn-transcribe').style.display = 'block';
+    document.getElementById('capture-title').textContent = 'Looks good?';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function transcribePhoto() {
+  const key = getApiKey();
+  if (!key) {
+    alert('Please go to Settings and add your Anthropic API key first.');
+    return;
+  }
+  if (!state.capturedImageData) return;
+
+  // Show spinner
+  document.getElementById('analyzing-overlay').classList.add('show');
+
+  try {
+    const base64 = state.capturedImageData.split(',')[1];
+    const mediaType = state.capturedImageData.split(';')[0].split(':')[1] || 'image/jpeg';
+
+    const prompt = `You are transcribing a handwritten family recipe card into structured JSON.
+
+Look carefully at the image. Extract everything — title, servings, times, all ingredients (with amounts and prep notes), every instruction step, and any personal notes/memories written on the card.
+
+Respond with ONLY valid JSON, no other text:
+{
+  "title": "Recipe Name",
+  "story": "Any personal note or memory on the card (empty string if none)",
+  "servings": 4,
+  "prep_minutes": 15,
+  "cook_minutes": 30,
+  "difficulty": "Easy",
+  "tags": ["Mexican", "Family"],
+  "ingredients": [
+    {"quantity": "2 cups", "name": "white rice", "notes": "rinsed"}
+  ],
+  "steps": [
+    "Heat oil in a heavy pot over medium heat.",
+    "Toast rice until golden, about 5 minutes."
+  ]
+}
+
+difficulty must be exactly: "Easy", "Medium", or "Hard"
+If unclear, guess and add "(unclear)".`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type':    'application/json',
+        'x-api-key':       key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 2048,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+            { type: 'text',  text: prompt }
+          ]
+        }]
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      throw new Error(`API error ${resp.status}: ${err}`);
+    }
+
+    const data   = await resp.json();
+    const text   = data.content?.[0]?.text || '';
+    const clean  = text.replace(/```json/g,'').replace(/```/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    state.pendingRecipe = parsed;
+    buildReviewScreen(parsed);
+    document.getElementById('analyzing-overlay').classList.remove('show');
+    showScreen('screen-review');
+
+  } catch(e) {
+    document.getElementById('analyzing-overlay').classList.remove('show');
+    alert('Error: ' + e.message);
+  }
+}
+
+function buildReviewScreen(r) {
+  const form = document.getElementById('review-form');
+  const ings = (r.ingredients || []).map(i =>
+    `<li><span class="ing-qty">${esc(i.quantity)}</span> ${esc(i.name)}${i.notes ? ` <em class="muted">(${esc(i.notes)})</em>` : ''}</li>`
+  ).join('');
+
+  form.innerHTML = `
+    <h3 class="display" style="padding:0 4px 4px">Looks good?</h3>
+    <p class="muted sans" style="font-size:13px;padding:0 4px 8px">Review what Claude found. Edit anything before saving.</p>
+
+    <div class="form-group">
+      <label>Recipe Name</label>
+      <input type="text" id="review-title" value="${esc(r.title)}">
+    </div>
+    <div class="form-group">
+      <label>Personal Story / Note</label>
+      <textarea id="review-story">${esc(r.story || '')}</textarea>
+    </div>
+
+    <div class="divider"><span>✦</span></div>
+
+    <div style="margin-bottom:6px">
+      <strong class="display" style="font-size:16px">Ingredients (${(r.ingredients||[]).length})</strong>
+      <ul class="ingredients-preview" style="margin-top:8px;list-style:none">${ings}</ul>
+    </div>
+
+    <div class="divider"><span>✦</span></div>
+
+    <p class="sans muted" style="font-size:13px">${(r.steps||[]).length} instruction steps detected.</p>
+
+    ${state.capturedImageData ? `<div style="margin-top:8px">
+      <img src="${state.capturedImageData}" style="width:100%;border-radius:10px;max-height:200px;object-fit:contain">
+    </div>` : ''}
+  `;
+}
+
+async function saveFromReview() {
+  const r = state.pendingRecipe;
+  if (!r) return;
+
+  const title = document.getElementById('review-title').value.trim();
+  const story = document.getElementById('review-story').value.trim();
+
+  const recipe = {
+    id:           uid(),
+    title:        title || r.title,
+    story,
+    origin:       '',
+    servings:     r.servings || 4,
+    prepMinutes:  r.prep_minutes || 0,
+    cookMinutes:  r.cook_minutes || 0,
+    get totalMinutes() { return this.prepMinutes + this.cookMinutes; },
+    difficulty:   r.difficulty || 'Medium',
+    tags:         r.tags || [],
+    ingredients:  r.ingredients || [],
+    steps:        r.steps || [],
+    sourcePhoto:  state.capturedImageData,
+    createdAt:    Date.now(),
+  };
+
+  await addRecipeToCookbook(recipe);
+  await showCookbook(state.currentCookbookId);
+}
+
+// ── Manual add screen ─────────────────────────────────
+function showAddManual() {
+  const form = document.getElementById('add-form');
+  form.innerHTML = `
+    <div class="form-group"><label>Recipe Name *</label><input type="text" id="m-title" placeholder="e.g. Arroz Rojo"></div>
+    <div class="form-group"><label>Origin</label><input type="text" id="m-origin" placeholder="e.g. Abuela's kitchen, Guadalajara"></div>
+    <div class="form-group"><label>Personal Story / Memory</label><textarea id="m-story" placeholder="The memory or note that goes with this recipe…"></textarea></div>
+    <div class="form-group">
+      <label>Serves</label>
+      <input type="number" id="m-servings" value="4" min="1" max="100">
+    </div>
+    <div class="form-group">
+      <label>Prep Time (min)</label><input type="number" id="m-prep" value="0" min="0">
+    </div>
+    <div class="form-group">
+      <label>Cook Time (min)</label><input type="number" id="m-cook" value="0" min="0">
+    </div>
+    <div class="form-group">
+      <label>Difficulty</label>
+      <select id="m-diff" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--card);color:var(--ink);font-size:15px">
+        <option>Easy</option><option selected>Medium</option><option>Hard</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Tags (comma separated)</label>
+      <input type="text" id="m-tags" placeholder="Mexican, Rice, Sunday">
+    </div>
+
+    <div class="form-group">
+      <label>Ingredients</label>
+      <div class="dyn-list" id="ing-list">
+        <div class="dyn-row">
+          <input type="text" class="qty-input" placeholder="2 cups">
+          <input type="text" placeholder="white rice">
+          <button class="btn-remove" onclick="removeRow(this)">−</button>
+        </div>
+      </div>
+      <button class="btn-add-row" onclick="addIngRow()">＋ Add ingredient</button>
+    </div>
+
+    <div class="form-group">
+      <label>Instructions</label>
+      <div class="dyn-list" id="step-list">
+        <div class="dyn-row">
+          <textarea placeholder="Step 1…" rows="2"></textarea>
+          <button class="btn-remove" onclick="removeRow(this)">−</button>
+        </div>
+      </div>
+      <button class="btn-add-row" onclick="addStepRow()">＋ Add step</button>
+    </div>
+  `;
+  showScreen('screen-add');
+}
+
+function addIngRow() {
+  const list = document.getElementById('ing-list');
+  const row  = document.createElement('div');
+  row.className = 'dyn-row';
+  row.innerHTML = `
+    <input type="text" class="qty-input" placeholder="qty">
+    <input type="text" placeholder="ingredient">
+    <button class="btn-remove" onclick="removeRow(this)">−</button>`;
+  list.appendChild(row);
+}
+
+function addStepRow() {
+  const list = document.getElementById('step-list');
+  const row  = document.createElement('div');
+  row.className = 'dyn-row';
+  row.innerHTML = `
+    <textarea placeholder="Step…" rows="2"></textarea>
+    <button class="btn-remove" onclick="removeRow(this)">−</button>`;
+  list.appendChild(row);
+}
+
+function removeRow(btn) {
+  const list = btn.parentElement.parentElement;
+  if (list.children.length > 1) btn.parentElement.remove();
+}
+
+async function saveManualRecipe() {
+  const title = document.getElementById('m-title').value.trim();
+  if (!title) { alert('Please enter a recipe name.'); return; }
+
+  const ingRows  = [...document.getElementById('ing-list').querySelectorAll('.dyn-row')];
+  const stepRows = [...document.getElementById('step-list').querySelectorAll('.dyn-row')];
+
+  const ingredients = ingRows.map(row => {
+    const inputs = row.querySelectorAll('input');
+    return { quantity: inputs[0]?.value.trim() || '', name: inputs[1]?.value.trim() || '', notes: '' };
+  }).filter(i => i.name);
+
+  const steps = stepRows.map(row => row.querySelector('textarea')?.value.trim()).filter(Boolean);
+
+  const tagsRaw = document.getElementById('m-tags').value;
+  const tags = tagsRaw.split(',').map(t=>t.trim()).filter(Boolean);
+
+  const recipe = {
+    id:          uid(),
+    title,
+    story:       document.getElementById('m-story').value.trim(),
+    origin:      document.getElementById('m-origin').value.trim(),
+    servings:    parseInt(document.getElementById('m-servings').value) || 4,
+    prepMinutes: parseInt(document.getElementById('m-prep').value) || 0,
+    cookMinutes: parseInt(document.getElementById('m-cook').value) || 0,
+    get totalMinutes() { return this.prepMinutes + this.cookMinutes; },
+    difficulty:  document.getElementById('m-diff').value,
+    tags,
+    ingredients,
+    steps,
+    sourcePhoto: null,
+    createdAt:   Date.now(),
+  };
+
+  await addRecipeToCookbook(recipe);
+  await showCookbook(state.currentCookbookId);
+}
+
+// ── Add recipe to cookbook in DB ──────────────────────
+async function addRecipeToCookbook(recipe) {
+  const cb = await dbGet('cookbooks', state.currentCookbookId);
+  if (!cb) return;
+  // Flatten totalMinutes for storage
+  const toStore = { ...recipe };
+  toStore.totalMinutes = (recipe.prepMinutes || 0) + (recipe.cookMinutes || 0);
+  delete toStore.totalMinutes; // getter
+  cb.recipes.push(toStore);
+  await dbPut('cookbooks', cb);
+}
+
+// ── Delete ────────────────────────────────────────────
+async function deleteCookbookPrompt() {
+  const cb = await dbGet('cookbooks', state.currentCookbookId);
+  if (!cb) return;
+  if (confirm(`Delete "${cb.name}" and all its recipes? This cannot be undone.`)) {
+    await dbDelete('cookbooks', state.currentCookbookId);
+    showShelf();
+  }
+}
+
+async function deleteRecipePrompt() {
+  const cb = await dbGet('cookbooks', state.currentCookbookId);
+  const r  = cb?.recipes.find(x => x.id === state.currentRecipeId);
+  if (!r) return;
+  if (confirm(`Delete "${r.title}"? This cannot be undone.`)) {
+    cb.recipes = cb.recipes.filter(x => x.id !== state.currentRecipeId);
+    await dbPut('cookbooks', cb);
+    showCookbook(state.currentCookbookId);
+  }
+}
+
+async function clearAllData() {
+  if (confirm('Delete ALL cookbooks and recipes? This cannot be undone.')) {
+    const all = await dbGetAll('cookbooks');
+    for (const cb of all) await dbDelete('cookbooks', cb.id);
+    showShelf();
+  }
+}
+
+// ── Cookbook modal ────────────────────────────────────
+const EMOJIS = ['👵🏽','👩🏽','👨🏽‍🍳','👩🏾‍🍳','👴🏽','🧑🏽‍🍳','👩🏻','👨🏻‍🍳','🧓🏽','👩🏼‍🍳'];
+let selectedEmoji = '👵🏽';
+
+function openAddCookbook() {
+  selectedEmoji = EMOJIS[0];
+  document.getElementById('cb-name-input').value = '';
+
+  const grid = document.getElementById('emoji-grid');
+  grid.innerHTML = EMOJIS.map(e => `
+    <button class="emoji-btn${e===selectedEmoji?' selected':''}" onclick="selectEmoji('${e}',this)">${e}</button>
+  `).join('');
+
+  document.getElementById('modal-add-cookbook').classList.add('show');
+  setTimeout(() => document.getElementById('cb-name-input').focus(), 200);
+}
+
+function selectEmoji(e, btn) {
+  selectedEmoji = e;
+  document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+async function saveCookbook() {
+  const name = document.getElementById('cb-name-input').value.trim();
+  if (!name) return;
+
+  const cb = { id: uid(), name, emoji: selectedEmoji, recipes: [], createdAt: Date.now() };
+  await dbPut('cookbooks', cb);
+  closeModal('modal-add-cookbook');
+  showShelf();
+}
+
+// ── API key ───────────────────────────────────────────
+function getApiKey() {
+  return localStorage.getItem('anthropic_api_key') || '';
+}
+
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  localStorage.setItem('anthropic_api_key', key);
+  const badge = document.getElementById('save-badge');
+  badge.classList.add('show');
+  setTimeout(() => badge.classList.remove('show'), 2500);
+}
+
+// ── Escape HTML ───────────────────────────────────────
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// ── Seed sample data ──────────────────────────────────
+async function seedIfEmpty() {
+  const all = await dbGetAll('cookbooks');
+  if (all.length > 0) return;
+
+  const abuela = {
+    id: uid(), name: 'Abuela Rosa', emoji: '👵🏽', createdAt: Date.now(),
+    recipes: [
+      {
+        id: uid(), title: 'Arroz Rojo', origin: "Abuela's kitchen, Guadalajara",
+        story: "She made this every Sunday. Never measured anything — I watched her hands for years until I finally wrote it down. The secret is letting the rice toast until it smells like popcorn.",
+        servings: 6, prepMinutes: 10, cookMinutes: 25, totalMinutes: 35,
+        difficulty: 'Easy', tags: ['Mexican','Rice','Sunday','Side Dish'],
+        ingredients: [
+          {quantity:'2 cups', name:'long-grain white rice', notes:'rinsed until water runs clear'},
+          {quantity:'3 tbsp', name:'vegetable oil', notes:''},
+          {quantity:'½ onion', name:'white onion', notes:'finely diced'},
+          {quantity:'3 cloves', name:'garlic', notes:'minced'},
+          {quantity:'2', name:'Roma tomatoes', notes:'blended smooth'},
+          {quantity:'3 cups', name:'chicken broth', notes:'warm'},
+          {quantity:'1 tsp', name:'salt', notes:'or to taste'},
+          {quantity:'1 sprig', name:'fresh cilantro', notes:''},
+          {quantity:'1', name:'jalapeño', notes:'whole, left intact'}
+        ],
+        steps: [
+          'Rinse rice in cold water until the water runs almost clear. Drain well and let sit 5 minutes.',
+          'Heat oil in a heavy-bottomed pot over medium-high heat until shimmering.',
+          'Add dry rice. Stir constantly, toasting until grains turn golden and smell nutty like popcorn — about 5–7 minutes. Don\'t rush this step.',
+          'Add onion and garlic. Cook 2 minutes, stirring.',
+          'Pour in blended tomato and stir to coat rice. Cook until absorbed, about 2 minutes.',
+          'Pour in warm chicken broth and salt. Stir once.',
+          'Nestle cilantro and whole jalapeño into the rice. Do not stir again.',
+          'Bring to a boil, then reduce to the lowest heat. Cover tightly and cook 18 minutes.',
+          'Remove from heat. Let steam, covered, for 5 more minutes. Fluff gently with a fork.',
+          'Taste and adjust salt. Discard cilantro and jalapeño. Serve immediately.'
+        ],
+        sourcePhoto: null, createdAt: Date.now()
+      },
+      {
+        id: uid(), title: 'Salsa Roja', origin: "Abuela's kitchen",
+        story: 'Always on the table. Made fresh every day.',
+        servings: 8, prepMinutes: 5, cookMinutes: 15, totalMinutes: 20,
+        difficulty: 'Easy', tags: ['Mexican','Salsa','Everyday'],
+        ingredients: [
+          {quantity:'4', name:'Roma tomatoes', notes:''},
+          {quantity:'2–3', name:'chiles de árbol', notes:'dried, stems removed'},
+          {quantity:'¼', name:'white onion', notes:''},
+          {quantity:'2 cloves', name:'garlic', notes:'unpeeled'},
+          {quantity:'', name:'salt', notes:'to taste'}
+        ],
+        steps: [
+          'Place tomatoes, chiles, onion, and unpeeled garlic on a dry comal over medium heat.',
+          'Char everything, turning occasionally, until tomatoes are soft and blistered — 10–15 minutes.',
+          'Peel garlic. Add everything to a blender.',
+          'Blend on high until smooth. Season with salt.',
+          'Serve warm or at room temperature.'
+        ],
+        sourcePhoto: null, createdAt: Date.now()
+      },
+      {
+        id: uid(), title: 'Frijoles de Olla', origin: "Abuela's kitchen",
+        story: 'Pinto beans from scratch. She kept a pot going on the stove almost every week.',
+        servings: 8, prepMinutes: 5, cookMinutes: 120, totalMinutes: 125,
+        difficulty: 'Easy', tags: ['Mexican','Beans','Staple','Vegan'],
+        ingredients: [
+          {quantity:'2 cups', name:'dried pinto beans', notes:'picked over and rinsed'},
+          {quantity:'8 cups', name:'water', notes:''},
+          {quantity:'¼', name:'white onion', notes:''},
+          {quantity:'2 cloves', name:'garlic', notes:''},
+          {quantity:'2 sprigs', name:'epazote or cilantro', notes:''},
+          {quantity:'1½ tsp', name:'salt', notes:'added at the end'}
+        ],
+        steps: [
+          'Combine beans, water, onion, garlic, and epazote in a large pot.',
+          'Bring to a boil, then reduce to a gentle simmer.',
+          'Cook uncovered 1.5–2 hours, adding hot water as needed to keep beans submerged.',
+          'When beans are completely tender, stir in salt.',
+          'Simmer 10 more minutes. Remove onion and herbs before serving.'
+        ],
+        sourcePhoto: null, createdAt: Date.now()
+      }
+    ]
+  };
+
+  const carlos = { id: uid(), name: 'Carlos', emoji: '👨🏽‍🍳', recipes: [], createdAt: Date.now() + 1 };
+
+  await dbPut('cookbooks', abuela);
+  await dbPut('cookbooks', carlos);
+}
+
+// ── iOS install banner ────────────────────────────────
+function checkInstallBanner() {
+  const isIOS        = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+  const dismissed    = localStorage.getItem('install-dismissed');
+  if (isIOS && !isStandalone && !dismissed) {
+    document.getElementById('install-banner').classList.add('show');
+  }
+}
+
+// ── Init ──────────────────────────────────────────────
+async function init() {
+  await openDB();
+  await seedIfEmpty();
+
+  // Restore saved API key to input
+  const saved = getApiKey();
+  if (saved) document.getElementById('api-key-input').value = saved;
+
+  checkInstallBanner();
+  showShelf();
+}
+
+init();
+</script>
+</body>
+</html>
